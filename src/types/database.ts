@@ -35,9 +35,9 @@ export interface Database {
         Row: {
           id: string
           brand_id: string
-          channel_id: string
+          channel_id: string | null
           channel_access_token: string
-          liff_id: string
+          liff_id: string | null
           created_at: string
           updated_at: string
         }

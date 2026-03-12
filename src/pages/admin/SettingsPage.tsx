@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAdminUser } from '@/features/auth/useAdminUser'
+import { slugify } from '@/lib/utils'
 import { toast } from '@/lib/toast'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -12,12 +13,18 @@ import { Building2, Plug, Save } from 'lucide-react'
 export default function SettingsPage() {
   const { brand, adminUser } = useAdminUser()
   const [config, setConfig] = useState<Partial<BrandLineConfig>>({})
+  const [brandName, setBrandName] = useState('')
+  const [brandSlug, setBrandSlug] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
+    if (brand) {
+      setBrandName(brand.name)
+      setBrandSlug(brand.slug)
+    }
     if (adminUser?.brand_id) loadConfig(adminUser.brand_id)
-  }, [adminUser?.brand_id])
+  }, [brand, adminUser?.brand_id])
 
   async function loadConfig(brandId: string) {
     const { data } = await supabase.from('brand_line_configs').select('*').eq('brand_id', brandId).single()
@@ -28,15 +35,33 @@ export default function SettingsPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     if (!adminUser?.brand_id) return
+    if (!brandName.trim()) { toast.error('請填寫品牌名稱'); return }
+    if (!brandSlug.trim() || !/^[a-z0-9-]+$/.test(brandSlug)) {
+      toast.error('品牌 Slug 只允許小寫英文、數字、連字號')
+      return
+    }
     setSaving(true)
 
-    const { error } = await supabase
-      .from('brand_line_configs')
-      .update({ channel_id: config.channel_id, liff_id: config.liff_id })
-      .eq('brand_id', adminUser.brand_id)
+    const [brandResult, configResult] = await Promise.all([
+      supabase
+        .from('brands')
+        .update({ name: brandName.trim(), slug: brandSlug.trim() })
+        .eq('id', adminUser.brand_id),
+      supabase
+        .from('brand_line_configs')
+        .update({
+          channel_id: config.channel_id || null,
+          channel_access_token: config.channel_access_token,
+          liff_id: config.liff_id || null,
+        })
+        .eq('brand_id', adminUser.brand_id),
+    ])
 
-    if (error) { toast.error('儲存失敗'); setSaving(false); return }
-    toast.success('設定已儲存')
+    if (brandResult.error || configResult.error) {
+      toast.error('儲存失敗')
+    } else {
+      toast.success('設定已儲存')
+    }
     setSaving(false)
   }
 
@@ -57,14 +82,18 @@ export default function SettingsPage() {
             <h2 className="text-sm font-semibold text-gray-800">品牌資訊</h2>
           </div>
           <div className="space-y-3">
-            <div>
-              <label className="text-sm font-medium text-gray-700">品牌名稱</label>
-              <p className="mt-1 text-sm text-gray-900 bg-gray-50 rounded-xl px-3.5 py-2.5">{brand?.name}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">品牌 Slug</label>
-              <p className="mt-1 text-sm text-gray-500 bg-gray-50 rounded-xl px-3.5 py-2.5">{brand?.slug}</p>
-            </div>
+            <Input
+              label="品牌名稱"
+              value={brandName}
+              onChange={e => setBrandName(e.target.value)}
+              onBlur={() => { if (!brandSlug) setBrandSlug(slugify(brandName)) }}
+            />
+            <Input
+              label="品牌 Slug"
+              value={brandSlug}
+              onChange={e => setBrandSlug(e.target.value)}
+              helper="用於活動網址，只允許小寫英文、數字、連字號"
+            />
           </div>
         </Card>
 
@@ -80,17 +109,21 @@ export default function SettingsPage() {
               value={config.channel_id || ''}
               onChange={e => setConfig(c => ({ ...c, channel_id: e.target.value }))}
             />
-            <div>
+            <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-gray-700">Channel Access Token</label>
-              <p className="mt-1 text-xs text-gray-400 bg-gray-50 rounded-xl px-3.5 py-2.5">
-                ••••••••••••••••（已設定）
-              </p>
-              <p className="text-xs text-gray-400 mt-1">如需更新 Token，請聯絡系統管理員</p>
+              <textarea
+                className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-sm text-gray-900 placeholder:text-gray-400 transition-colors outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none"
+                rows={3}
+                value={config.channel_access_token || ''}
+                onChange={e => setConfig(c => ({ ...c, channel_access_token: e.target.value }))}
+              />
             </div>
             <Input
               label="LIFF ID"
+              placeholder="例：1234567890-xxxxxxxx"
               value={config.liff_id || ''}
               onChange={e => setConfig(c => ({ ...c, liff_id: e.target.value }))}
+              helper="在 LINE Developers Console > LIFF 頁籤取得"
             />
           </div>
         </Card>
