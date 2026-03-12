@@ -37,7 +37,10 @@ function ToastItem({ toast }: { toast: Toast }) {
 export function Toaster() {
   const [toasts, setToasts] = useState<Toast[]>([])
 
-  useEffect(() => subscribeToasts(setToasts), [])
+  useEffect(() => {
+    const unsub = subscribeToasts(setToasts)
+    return () => { unsub() }
+  }, [])
 
   if (toasts.length === 0) return null
 

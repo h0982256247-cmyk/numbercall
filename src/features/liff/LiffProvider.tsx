@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { initLiff, isLiffLoggedIn, liffLogin } from '@/lib/liff'
-import type { Profile } from '@line/liff'
+type Profile = { userId: string; displayName: string; pictureUrl?: string; statusMessage?: string }
 import { PageLoader } from '@/components/ui/Spinner'
 
 interface LiffContextValue {

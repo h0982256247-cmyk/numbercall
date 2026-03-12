@@ -49,8 +49,8 @@ export default function EventQueuePage() {
     ])
 
     setEventName(evRes.data?.name || '')
-    setTickets((ticketsRes.data as TicketWithUser[]) || [])
-    setCurrentCalled(calledRes.data as TicketWithUser | null)
+    setTickets((ticketsRes.data as unknown as TicketWithUser[]) || [])
+    setCurrentCalled(calledRes.data as unknown as TicketWithUser | null)
     setLoading(false)
   }
 

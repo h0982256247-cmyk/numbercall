@@ -27,7 +27,7 @@ export default function MyHistoryPage() {
         .eq('line_user_id', user.id)
         .order('created_at', { ascending: false })
 
-      setTickets((data as TicketWithEvent[]) || [])
+      setTickets((data as unknown as TicketWithEvent[]) || [])
       setLoading(false)
     }
     load()
