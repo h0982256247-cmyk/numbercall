@@ -38,16 +38,17 @@ export const router = createBrowserRouter([
       { path: '/', element: <HomePage /> },
     ],
   },
-  // LIFF-protected routes
+  // LIFF-protected routes（含品牌 slug，用於動態讀取 LIFF ID）
   {
+    path: '/b/:brandSlug',
     element: <LiffRoute />,
     children: [
       {
         element: <PublicLayout />,
         children: [
-          { path: '/queue/:slug',  element: <QueuePage /> },
-          { path: '/my-ticket',   element: <MyTicketPage /> },
-          { path: '/my-history',  element: <MyHistoryPage /> },
+          { path: 'queue/:slug',  element: <QueuePage /> },
+          { path: 'my-ticket',   element: <MyTicketPage /> },
+          { path: 'my-history',  element: <MyHistoryPage /> },
         ],
       },
     ],

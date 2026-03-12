@@ -1,5 +1,5 @@
 import { LiffProvider, useLiff } from '@/features/liff/LiffProvider'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useParams } from 'react-router-dom'
 
 function LiffContent() {
   const { ready, loggedIn } = useLiff()
@@ -9,8 +9,9 @@ function LiffContent() {
 }
 
 export default function LiffRoute() {
+  const { brandSlug } = useParams<{ brandSlug: string }>()
   return (
-    <LiffProvider>
+    <LiffProvider brandSlug={brandSlug ?? ''}>
       <LiffContent />
     </LiffProvider>
   )

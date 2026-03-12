@@ -101,7 +101,12 @@ export interface Database {
       }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      get_liff_id: {
+        Args: { p_brand_slug: string }
+        Returns: string | null
+      }
+    }
   }
 }
 

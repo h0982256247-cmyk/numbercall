@@ -12,7 +12,7 @@ import type { Event } from '@/types/database'
 import { CalendarDays, Users, Ticket, ChevronRight } from 'lucide-react'
 
 export default function QueuePage() {
-  const { slug } = useParams<{ slug: string }>()
+  const { slug, brandSlug } = useParams<{ slug: string; brandSlug: string }>()
   const navigate = useNavigate()
   const { profile } = useLiff()
 
@@ -70,7 +70,7 @@ export default function QueuePage() {
     }
 
     toast.success(`成功領取 #${json.ticket.queue_number} 號！`)
-    navigate('/my-ticket')
+    navigate(`/b/${brandSlug}/my-ticket`)
   }
 
   if (loading) return <PageLoader />
