@@ -29,6 +29,13 @@ export async function callFunction(
   const { data: { session } } = await supabase.auth.getSession()
   const token = session?.access_token ?? supabaseAnonKey
 
+  // DEBUG: 暫時日誌，確認 token 狀態（稍後移除）
+  console.log('[callFunction]', name, {
+    hasSession: !!session,
+    tokenType: session?.access_token ? 'user_jwt' : 'anon_key',
+    tokenStart: token?.substring(0, 30),
+  })
+
   return fetch(`${supabaseUrl}/functions/v1/${name}`, {
     method,
     headers: {
