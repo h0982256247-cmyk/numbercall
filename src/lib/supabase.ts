@@ -26,6 +26,11 @@ export async function callFunction(
 ): Promise<Response> {
   const method = options?.method ?? 'POST'
 
+  // 每次呼叫前確保 functions client 使用最新的 session token
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token ?? supabaseAnonKey
+  supabase.functions.setAuth(token)
+
   const { data, error } = await supabase.functions.invoke(name, {
     method: method as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     body: method === 'GET' ? undefined : (body as Record<string, unknown> | undefined),
