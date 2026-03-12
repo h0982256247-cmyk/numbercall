@@ -29,14 +29,7 @@ export async function callFunction(
   const { data: { session } } = await supabase.auth.getSession()
   const token = session?.access_token ?? supabaseAnonKey
 
-  // DEBUG: 暫時日誌，確認 token 狀態（稍後移除）
-  console.log('[callFunction]', name, {
-    hasSession: !!session,
-    tokenType: session?.access_token ? 'user_jwt' : 'anon_key',
-    tokenStart: token?.substring(0, 30),
-  })
-
-  return fetch(`${supabaseUrl}/functions/v1/${name}`, {
+  const response = await fetch(`${supabaseUrl}/functions/v1/${name}`, {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -45,4 +38,11 @@ export async function callFunction(
     },
     body: method !== 'GET' && body !== undefined ? JSON.stringify(body) : undefined,
   })
+
+  // DEBUG: 印出 401 回應內容
+  if (!response.ok) {
+    response.clone().text().then(t => console.error('[callFunction] error', response.status, t)).catch(() => {})
+  }
+
+  return response
 }
