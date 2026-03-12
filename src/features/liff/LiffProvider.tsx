@@ -55,6 +55,8 @@ export function LiffProvider({ children, brandSlug }: LiffProviderProps) {
       await initLiff(liffId)
 
       if (!isLiffLoggedIn()) {
+        // 儲存 brandSlug，讓 LINE 導回根路由時能重新定向到正確的品牌路由
+        sessionStorage.setItem('liff_brand_slug', brandSlug)
         liffLogin(window.location.href)
         return
       }
@@ -78,6 +80,7 @@ export function LiffProvider({ children, brandSlug }: LiffProviderProps) {
       // Set Supabase session
       await supabase.auth.setSession(session)
 
+      sessionStorage.removeItem('liff_brand_slug')
       setState({ ready: true, loggedIn: true, profile, supabaseSession: session })
     }
 
