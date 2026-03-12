@@ -17,7 +17,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 
 /**
  * 呼叫 Supabase Edge Function
- * 使用直接 fetch，避免 SDK invoke 的自動 retry 干擾 Authorization header
+ * 自動處理 token 過期：若 access_token 即將過期則先 refresh
  */
 export async function callFunction(
   name: string,
@@ -26,10 +26,9 @@ export async function callFunction(
 ): Promise<Response> {
   const method = options?.method ?? 'POST'
 
-  const { data: { session } } = await supabase.auth.getSession()
-  const token = session?.access_token ?? supabaseAnonKey
+  const token = await getFreshToken()
 
-  const response = await fetch(`${supabaseUrl}/functions/v1/${name}`, {
+  return fetch(`${supabaseUrl}/functions/v1/${name}`, {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -38,11 +37,25 @@ export async function callFunction(
     },
     body: method !== 'GET' && body !== undefined ? JSON.stringify(body) : undefined,
   })
+}
 
-  // DEBUG: 印出 401 回應內容
-  if (!response.ok) {
-    response.clone().text().then(t => console.error('[callFunction] error', response.status, t)).catch(() => {})
+/**
+ * 取得有效的 access token
+ * 若 session 存在但 token 已過期，自動 refresh
+ */
+async function getFreshToken(): Promise<string> {
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session) return supabaseAnonKey
+
+  const now = Math.floor(Date.now() / 1000)
+  const expiresAt = session.expires_at ?? 0
+
+  // token 已過期或 30 秒內即將到期 → 先 refresh
+  if (expiresAt < now + 30) {
+    const { data } = await supabase.auth.refreshSession()
+    return data.session?.access_token ?? supabaseAnonKey
   }
 
-  return response
+  return session.access_token
 }

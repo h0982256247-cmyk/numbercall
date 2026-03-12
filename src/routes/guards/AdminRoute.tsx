@@ -8,7 +8,14 @@ export default function AdminRoute() {
   const [session, setSession] = useState<Session | null | 'loading'>('loading')
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session))
+    // getUser() validates the token server-side, ensuring expired tokens redirect to login
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) {
+        setSession(null)
+        return
+      }
+      supabase.auth.getSession().then(({ data: s }) => setSession(s.session))
+    })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, s) => setSession(s))
     return () => subscription.unsubscribe()
   }, [])
