@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { PageLoader } from '@/components/ui/Spinner'
+import { AdminUserProvider } from '@/features/auth/useAdminUser'
 import type { Session } from '@supabase/supabase-js'
 
 export default function AdminRoute() {
@@ -22,5 +23,9 @@ export default function AdminRoute() {
 
   if (session === 'loading') return <PageLoader />
   if (!session) return <Navigate to="/admin/login" replace />
-  return <Outlet />
+  return (
+    <AdminUserProvider>
+      <Outlet />
+    </AdminUserProvider>
+  )
 }

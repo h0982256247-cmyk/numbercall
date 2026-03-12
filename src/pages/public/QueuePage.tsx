@@ -14,7 +14,7 @@ import { CalendarDays, Users, Ticket, ChevronRight } from 'lucide-react'
 export default function QueuePage() {
   const { slug, brandSlug } = useParams<{ slug: string; brandSlug: string }>()
   const navigate = useNavigate()
-  const { profile } = useLiff()
+  useLiff()
 
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)
@@ -29,17 +29,14 @@ export default function QueuePage() {
   async function loadEvent(slug: string) {
     setLoading(true)
 
-    const { data: ev } = await supabase
-      .from('events')
-      .select('*')
-      .eq('slug', slug)
-      .single()
+    const [{ data: ev }, { data: { user } }] = await Promise.all([
+      supabase.from('events').select('*').eq('slug', slug).single(),
+      supabase.auth.getUser(),
+    ])
 
     if (!ev) { setLoading(false); return }
     setEvent(ev)
 
-    // Check if user already has a ticket
-    const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: ticket } = await supabase
         .from('queue_tickets')
@@ -83,8 +80,6 @@ export default function QueuePage() {
     )
   }
 
-  const canTakeTicket = event.status === 'active' && !hasTicket
-
   return (
     <div className="animate-fade-in">
       {/* Hero */}
@@ -124,7 +119,7 @@ export default function QueuePage() {
                 <p className="text-sm font-semibold text-gray-900">你已持有號碼牌</p>
                 <p className="text-xs text-gray-500 mt-0.5">查看你的入場狀態</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigate('/my-ticket')}>
+              <Button variant="outline" size="sm" onClick={() => navigate(`/b/${brandSlug}/my-ticket`)}>
                 查看 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>

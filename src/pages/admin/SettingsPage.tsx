@@ -11,11 +11,11 @@ import type { BrandLineConfig } from '@/types/database'
 import { Building2, Plug, Save } from 'lucide-react'
 
 export default function SettingsPage() {
-  const { brand, adminUser } = useAdminUser()
+  const { brand, adminUser, loading: userLoading, reload } = useAdminUser()
   const [config, setConfig] = useState<Partial<BrandLineConfig>>({})
   const [brandName, setBrandName] = useState('')
   const [brandSlug, setBrandSlug] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [configLoading, setConfigLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function SettingsPage() {
   async function loadConfig(brandId: string) {
     const { data } = await supabase.from('brand_line_configs').select('*').eq('brand_id', brandId).single()
     if (data) setConfig(data)
-    setLoading(false)
+    setConfigLoading(false)
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -61,11 +61,12 @@ export default function SettingsPage() {
       toast.error('儲存失敗')
     } else {
       toast.success('設定已儲存')
+      reload() // refresh brand name in sidebar
     }
     setSaving(false)
   }
 
-  if (loading) return <PageLoader />
+  if (userLoading || configLoading) return <PageLoader />
 
   return (
     <div className="space-y-5 animate-fade-in">
