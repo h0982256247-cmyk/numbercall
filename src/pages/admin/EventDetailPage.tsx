@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { useAdminUser } from '@/features/auth/useAdminUser'
 import { toast } from '@/lib/toast'
 import { formatDateRange } from '@/lib/utils'
 import { Card } from '@/components/ui/Card'
@@ -13,6 +14,7 @@ import { BarChart3, ListOrdered, Settings, ExternalLink, ChevronLeft } from 'luc
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>()
   const navigate = useNavigate()
+  const { brand } = useAdminUser()
   const [event, setEvent] = useState<Event | null>(null)
   const [stats, setStats] = useState({ waiting: 0, entered: 0, total: 0 })
   const [loading, setLoading] = useState(true)
@@ -51,7 +53,7 @@ export default function EventDetailPage() {
   if (loading) return <PageLoader />
   if (!event) return <div className="text-center py-20 text-gray-500">活動不存在</div>
 
-  const queueUrl = `${window.location.origin}/queue/${event.slug}`
+  const queueUrl = `${window.location.origin}/b/${brand?.slug}/queue/${event.slug}`
 
   return (
     <div className="space-y-5 animate-fade-in">
