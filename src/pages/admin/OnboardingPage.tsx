@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { callFunction } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
 import { Button } from '@/components/ui/Button'
-import { Ticket, ChevronRight, Plug } from 'lucide-react'
+import { Ticket, ChevronRight, Plug, Eye, EyeOff } from 'lucide-react'
 
 export default function OnboardingPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [channelAccessToken, setChannelAccessToken] = useState('')
+  const [showToken, setShowToken] = useState(false)
   const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
@@ -55,13 +56,24 @@ export default function OnboardingPage() {
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-gray-700">LINE Channel Access Token *</label>
-              <textarea
-                className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-sm text-gray-900 placeholder:text-gray-400 transition-colors outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none"
-                rows={4}
-                placeholder="貼上 Channel Access Token"
-                value={channelAccessToken}
-                onChange={e => setChannelAccessToken(e.target.value)}
-              />
+              <div className="relative">
+                <input
+                  type={showToken ? 'text' : 'password'}
+                  className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-3 pr-10 text-sm text-gray-900 placeholder:text-gray-400 transition-colors outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                  placeholder="貼上 Channel Access Token"
+                  value={channelAccessToken}
+                  onChange={e => setChannelAccessToken(e.target.value)}
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowToken(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  tabIndex={-1}
+                >
+                  {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
               {error && <p className="text-xs text-red-500">{error}</p>}
               <p className="text-xs text-gray-400">在 LINE Developers Console &gt; Messaging API &gt; Channel access token 取得</p>
             </div>

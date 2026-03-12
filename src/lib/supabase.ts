@@ -41,7 +41,12 @@ export async function callFunction(
 
 /**
  * 取得有效的 access token
- * 若 session 存在但 token 已過期，自動 refresh
+ * 若 session 存在且 expires_at 已知且即將到期，自動 refresh
+ *
+ * 注意：不使用 `?? 0` 作為 expires_at 的預設值
+ * 當 expires_at 為 undefined 時（某些 SDK 版本或 setSession 情境），
+ * 應直接回傳 access_token，讓 SDK 的 autoRefreshToken 在背景處理，
+ * 避免每次都觸發 refreshSession() 進而 fallback 至 anon key。
  */
 async function getFreshToken(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession()
@@ -49,12 +54,13 @@ async function getFreshToken(): Promise<string> {
   if (!session) return supabaseAnonKey
 
   const now = Math.floor(Date.now() / 1000)
-  const expiresAt = session.expires_at ?? 0
+  const expiresAt = session.expires_at  // 不加 ?? 0，undefined 視為「未知」
 
-  // token 已過期或 30 秒內即將到期 → 先 refresh
-  if (expiresAt < now + 30) {
+  // 只有在明確知道 expires_at 且即將到期時才主動 refresh
+  if (expiresAt !== undefined && expiresAt < now + 30) {
     const { data } = await supabase.auth.refreshSession()
-    return data.session?.access_token ?? supabaseAnonKey
+    // refresh 成功 → 用新 token；失敗 → 仍用舊 token（讓 server 回傳正確錯誤）
+    if (data.session?.access_token) return data.session.access_token
   }
 
   return session.access_token
