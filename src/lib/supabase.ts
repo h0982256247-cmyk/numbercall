@@ -17,7 +17,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 
 /**
  * 呼叫 Supabase Edge Function
- * 使用官方 SDK invoke，自動帶入正確的 apikey + 使用者 JWT
+ * 使用直接 fetch，避免 SDK invoke 的自動 retry 干擾 Authorization header
  */
 export async function callFunction(
   name: string,
@@ -26,31 +26,16 @@ export async function callFunction(
 ): Promise<Response> {
   const method = options?.method ?? 'POST'
 
-  // 每次呼叫前確保 functions client 使用最新的 session token
   const { data: { session } } = await supabase.auth.getSession()
   const token = session?.access_token ?? supabaseAnonKey
-  supabase.functions.setAuth(token)
 
-  const { data, error } = await supabase.functions.invoke(name, {
-    method: method as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
-    body: method === 'GET' ? undefined : (body as Record<string, unknown> | undefined),
-  })
-
-  if (error) {
-    // FunctionsHttpError: error.context 是 gateway/function 回傳的原始 Response（body 尚未被讀取）
-    const ctx = (error as any).context
-    if (ctx instanceof Response) {
-      return ctx
-    }
-    // 網路錯誤或其他 relay 錯誤
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-
-  return new Response(JSON.stringify(data), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
+  return fetch(`${supabaseUrl}/functions/v1/${name}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'apikey': supabaseAnonKey,
+    },
+    body: method !== 'GET' && body !== undefined ? JSON.stringify(body) : undefined,
   })
 }
