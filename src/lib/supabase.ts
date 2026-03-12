@@ -26,15 +26,7 @@ export async function callFunction(
   body?: unknown,
   options?: { method?: string },
 ): Promise<Response> {
-  let { data: { session } } = await supabase.auth.getSession()
-
-  // Refresh if no session, or if token expires within 60 seconds
-  const expiresAt = session?.expires_at ?? 0
-  if (!session || expiresAt < Math.floor(Date.now() / 1000) + 60) {
-    const { data } = await supabase.auth.refreshSession()
-    session = data.session
-  }
-
+  const { data: { session } } = await supabase.auth.getSession()
   const accessToken = session?.access_token ?? supabaseAnonKey
 
   return fetch(`${supabaseUrl}/functions/v1/${name}`, {

@@ -105,7 +105,10 @@ serve(async (req) => {
   } catch (err) {
     console.error('onboarding error:', err)
     const message = err instanceof Error ? err.message : 'Internal error'
-    if (message === 'Unauthorized') return errorResponse('Unauthorized', 401)
+    // DIAG: 診斷訊息 — 回傳詳細原因以便排查 401
+    if (message.startsWith('DIAG:') || message === 'Unauthorized') {
+      return errorResponse(message, 401)
+    }
     return errorResponse(message, 500)
   }
 })
