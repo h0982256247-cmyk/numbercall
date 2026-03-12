@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { callFunction } from '@/lib/supabase'
+import { useAdminUser } from '@/features/auth/useAdminUser'
 import { toast } from '@/lib/toast'
 import { Button } from '@/components/ui/Button'
 import { Ticket, ChevronRight, Plug, Eye, EyeOff } from 'lucide-react'
 
 export default function OnboardingPage() {
   const navigate = useNavigate()
+  const { reload } = useAdminUser()
   const [loading, setLoading] = useState(false)
   const [channelAccessToken, setChannelAccessToken] = useState('')
   const [showToken, setShowToken] = useState(false)
@@ -31,6 +33,10 @@ export default function OnboardingPage() {
     }
 
     toast.success('品牌初始化完成！')
+    // 重新載入 AdminUserContext（brand_id 剛被寫入），
+    // OnboardedRoute 在 reload 期間顯示 PageLoader，
+    // 載入完成後 isOnboarded = true，放行進入 dashboard
+    reload()
     navigate('/admin/dashboard')
   }
 
