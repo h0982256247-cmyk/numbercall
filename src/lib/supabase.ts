@@ -17,25 +17,35 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 
 /**
  * 呼叫 Supabase Edge Function
- * 自動帶入 apikey + Authorization header
- * - 已登入：Bearer <user_jwt>
- * - 未登入：Bearer <anon_key>（適用 line-auth）
+ * 使用官方 SDK invoke，自動帶入正確的 apikey + 使用者 JWT
  */
 export async function callFunction(
   name: string,
   body?: unknown,
   options?: { method?: string },
 ): Promise<Response> {
-  const { data: { session } } = await supabase.auth.getSession()
-  const accessToken = session?.access_token ?? supabaseAnonKey
+  const method = options?.method ?? 'POST'
 
-  return fetch(`${supabaseUrl}/functions/v1/${name}`, {
-    method: options?.method ?? 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': supabaseAnonKey,
-      'Authorization': `Bearer ${accessToken}`,
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+  const { data, error } = await supabase.functions.invoke(name, {
+    method: method as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    body: method === 'GET' ? undefined : (body as Record<string, unknown> | undefined),
+  })
+
+  if (error) {
+    // FunctionsHttpError: error.context 是 gateway/function 回傳的原始 Response（body 尚未被讀取）
+    const ctx = (error as any).context
+    if (ctx instanceof Response) {
+      return ctx
+    }
+    // 網路錯誤或其他 relay 錯誤
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
   })
 }
